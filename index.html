@@ -12,6 +12,9 @@
             padding: 0;
             box-sizing: border-box;
         }
+
+        // Drag and Drop functionality
+        let draggedElement = null;
         
         body {
             font-family: 'Inter', sans-serif;
@@ -192,6 +195,37 @@
             background: #f9fafb;
         }
         
+        .expense-row {
+            cursor: move;
+            transition: all 0.2s ease;
+        }
+        
+        .expense-row:hover {
+            background: #f9fafb;
+        }
+        
+        .expense-row.dragging {
+            opacity: 0.5;
+            transform: scale(1.02);
+            background: #e0f2fe;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .expense-row.drag-over {
+            border-top: 3px solid #3b82f6;
+        }
+        
+        .drag-handle {
+            color: #9ca3af;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+            cursor: grab;
+        }
+        
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        
         .amount-text {
             font-weight: 700;
             color: #059669;
@@ -339,6 +373,7 @@
                 <table class="expenses-table">
                     <thead>
                         <tr>
+                            <th></th>
                             <th>Category</th>
                             <th>Description</th>
                             <th>Amount</th>
@@ -388,11 +423,11 @@
         let expenses = [];
 
         // Load data on page load
-        window.onload = function() {
+        window.addEventListener('DOMContentLoaded', function() {
             loadData();
             renderExpenses();
             updateSummary();
-        }
+        });
 
         function loadData() {
             const saved = localStorage.getItem('monthlyExpenses');
@@ -471,7 +506,12 @@
 
             expenses.forEach((expense, index) => {
                 const row = document.createElement('tr');
+                row.className = 'expense-row';
+                row.draggable = true;
+                row.dataset.index = index;
+                
                 row.innerHTML = `
+                    <td><span class="drag-handle">⋮⋮</span></td>
                     <td><strong>${expense.category}</strong></td>
                     <td>${expense.description}</td>
                     <td class="amount-text">₹${expense.amount.toLocaleString()}</td>
@@ -481,6 +521,75 @@
                     </td>
                 `;
                 tbody.appendChild(row);
+            });
+            
+            // Add event listeners to all rows after they're created
+            addDragListeners();
+        }
+        
+        function addDragListeners() {
+            const rows = document.querySelectorAll('.expense-row');
+            rows.forEach(row => {
+                row.addEventListener('dragstart', function(e) {
+                    draggedElement = this;
+                    this.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/html', this.outerHTML);
+                });
+                
+                row.addEventListener('dragover', function(e) {
+                    if (e.preventDefault) {
+                        e.preventDefault();
+                    }
+                    e.dataTransfer.dropEffect = 'move';
+                    return false;
+                });
+                
+                row.addEventListener('dragenter', function(e) {
+                    if (this !== draggedElement) {
+                        this.classList.add('drag-over');
+                    }
+                });
+                
+                row.addEventListener('dragleave', function(e) {
+                    this.classList.remove('drag-over');
+                });
+                
+                row.addEventListener('drop', function(e) {
+                    if (e.stopPropagation) {
+                        e.stopPropagation();
+                    }
+
+                    if (draggedElement !== this) {
+                        const draggedIndex = parseInt(draggedElement.dataset.index);
+                        const targetIndex = parseInt(this.dataset.index);
+                        
+                        // Reorder the expenses array
+                        const draggedExpense = expenses[draggedIndex];
+                        expenses.splice(draggedIndex, 1);
+                        expenses.splice(targetIndex, 0, draggedExpense);
+                        
+                        // Save and re-render
+                        saveData();
+                        renderExpenses();
+                        updateSummary();
+                    }
+
+                    this.classList.remove('drag-over');
+                    return false;
+                });
+                
+                row.addEventListener('dragend', function(e) {
+                    this.classList.remove('dragging');
+                    
+                    // Clean up all drag-over classes
+                    const allRows = document.querySelectorAll('.expense-row');
+                    allRows.forEach(row => {
+                        row.classList.remove('drag-over');
+                    });
+                    
+                    draggedElement = null;
+                });
             });
         }
 
@@ -496,7 +605,7 @@
             const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = 'monthly_expenses_rajahmundry.json';
+            link.download = 'monthly_expenses.json';
             link.click();
             URL.revokeObjectURL(url);
         }
