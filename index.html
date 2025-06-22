@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Expense Tracker - Rajahmundry</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+            min-height: 100vh;
+            color: #111827;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        
+        .header-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header-subtitle {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+        }
+        
+        .summary-icon {
+            background: #f0f9ff;
+            padding: 12px;
+            border-radius: 50%;
+            margin-right: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .summary-icon.green { background: #f0fdf4; }
+        .summary-icon.blue { background: #eff6ff; }
+        .summary-icon.purple { background: #faf5ff; }
+        
+        .summary-text h3 {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .summary-text p {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        
+        .summary-text p.green { color: #059669; }
+        .summary-text p.blue { color: #2563eb; }
+        .summary-text p.purple { color: #7c3aed; }
+        
+        .form-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .form-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #374151;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .form-input {
+            padding: 0.75rem;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .expenses-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+        
+        .expenses-header {
+            background: #f9fafb;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .expenses-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        .expenses-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .expenses-table thead {
+            background: #f3f4f6;
+        }
+        
+        .expenses-table th {
+            padding: 0.75rem 1.5rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .expenses-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.875rem;
+        }
+        
+        .expenses-table tbody tr:hover {
+            background: #f9fafb;
+        }
+        
+        .amount-text {
+            font-weight: 700;
+            color: #059669;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            color: #3b82f6;
+            cursor: pointer;
+            margin-right: 0.75rem;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            background: #eff6ff;
+        }
+        
+        .action-btn.delete {
+            color: #dc2626;
+        }
+        
+        .action-btn.delete:hover {
+            background: #fef2f2;
+        }
+        
+        .export-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .btn-secondary {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+        
+        .btn-green {
+            background: #059669;
+            color: white;
+        }
+        
+        .btn-green:hover {
+            background: #047857;
+        }
+        
+        .btn-orange {
+            background: #ea580c;
+            color: white;
+        }
+        
+        .btn-orange:hover {
+            background: #c2410c;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .header-title {
+                font-size: 1.5rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .expenses-table th,
+            .expenses-table td {
+                padding: 0.5rem;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="gradient-bg">
+        <h1 class="header-title">💰 Monthly Expense Tracker</h1>
+        <p class="header-subtitle">Rajahmundry - Family Budget Planner</p>
+    </div>
+
+    <div class="container">
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-icon green">💰</div>
+                <div class="summary-text">
+                    <h3>Total Budget</h3>
+                    <p class="green" id="totalBudget">₹0</p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon blue">📊</div>
+                <div class="summary-text">
+                    <h3>Total Items</h3>
+                    <p class="blue" id="totalItems">0</p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon purple">📱</div>
+                <div class="summary-text">
+                    <h3>Data Status</h3>
+                    <p class="purple" id="dataStatus">Saved Locally</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add New Expense Form -->
+        <div class="form-section">
+            <h2 class="form-title">➕ Add New Expense</h2>
+            <div class="form-grid">
+                <input type="text" id="newCategory" placeholder="Category (e.g., 🏠 House Rent)" class="form-input">
+                <input type="text" id="newDescription" placeholder="Description" class="form-input">
+                <input type="number" id="newAmount" placeholder="Amount (₹)" class="form-input">
+                <button onclick="addExpense()" class="btn-primary">Add Expense</button>
+            </div>
+        </div>
+
+        <!-- Expenses List -->
+        <div class="expenses-section">
+            <div class="expenses-header">
+                <h2 class="expenses-title">📋 Monthly Expenses</h2>
+            </div>
+            <div class="table-container">
+                <table class="expenses-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expensesList">
+                        <!-- Expenses will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Export/Import Options -->
+        <div class="export-grid">
+            <button onclick="exportData()" class="btn-secondary btn-green">📤 Export Data</button>
+            <label class="btn-secondary btn-orange">
+                📥 Import Data
+                <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData()">
+            </label>
+        </div>
+    </div>
+
+    <script>
+        // Default expenses data
+        const defaultExpenses = [
+            // Fixed Monthly Expenses
+            { category: "🏠 House Rent", description: "Fixed rent for the flat", amount: 16500 },
+            { category: "🛠️ Maintenance Charges", description: "Apartment association maintenance", amount: 1500 },
+            { category: "💡 Electricity Bill", description: "Varies by usage; assume moderate (AC, fridge, fans)", amount: 1750 },
+            { category: "💧 Water + Sewage", description: "Sometimes included in maintenance, or charged separately", amount: 300 },
+            { category: "📱 Mobile + Internet", description: "1–2 mobiles + broadband plan", amount: 1000 },
+            { category: "🍚 Groceries", description: "Monthly groceries, milk, veggies, etc.", amount: 9000 },
+            { category: "🧼 Household Items", description: "Soaps, detergents, cleaning supplies", amount: 750 },
+            { category: "🚼 Baby Needs", description: "Diapers, wipes, baby food, formula (if used), medicine", amount: 2000 },
+            { category: "🧒 Riyan Therapy & Fees", description: "Speech therapy or developmental activities", amount: 7500 },
+            { category: "🚌 Local Transport", description: "Auto, bike petrol, Ola/Uber (for therapy visits or errands)", amount: 1500 },
+            { category: "🏥 Healthcare (Basic)", description: "Pediatrician visits, common meds, checkups", amount: 750 },
+            { category: "🍽️ Gas Cylinder", description: "Cooking gas refill (1 every 40–50 days)", amount: 1000 },
+            // Optional But Common Extras
+            { category: "🎓 Child Education", description: "Playschool or preschool fees (if applicable)", amount: 2750 },
+            { category: "🧘 Self-Care/Medical", description: "Supplements, therapy sessions for yourself, etc.", amount: 750 },
+            { category: "🛍️ Clothing & Footwear", description: "Regular clothing for growing kids/family", amount: 750 },
+            { category: "🎉 Subscriptions", description: "OTT (YouTube Premium, Hotstar, etc)", amount: 200 }
+        ];
+
+        let expenses = [];
+
+        // Load data on page load
+        window.onload = function() {
+            loadData();
+            renderExpenses();
+            updateSummary();
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('monthlyExpenses');
+            if (saved) {
+                expenses = JSON.parse(saved);
+                document.getElementById('dataStatus').textContent = 'Loaded from Storage';
+            } else {
+                expenses = [...defaultExpenses];
+                saveData();
+                document.getElementById('dataStatus').textContent = 'Default Data Loaded';
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('monthlyExpenses', JSON.stringify(expenses));
+            document.getElementById('dataStatus').textContent = 'Saved Locally ✓';
+            setTimeout(() => {
+                document.getElementById('dataStatus').textContent = 'Saved Locally';
+            }, 2000);
+        }
+
+        function addExpense() {
+            const category = document.getElementById('newCategory').value.trim();
+            const description = document.getElementById('newDescription').value.trim();
+            const amount = parseFloat(document.getElementById('newAmount').value);
+
+            if (!category || !description || !amount || amount <= 0) {
+                alert('Please fill all fields with valid data');
+                return;
+            }
+
+            expenses.push({ category, description, amount });
+            saveData();
+            renderExpenses();
+            updateSummary();
+
+            // Clear form
+            document.getElementById('newCategory').value = '';
+            document.getElementById('newDescription').value = '';
+            document.getElementById('newAmount').value = '';
+        }
+
+        function deleteExpense(index) {
+            if (confirm('Are you sure you want to delete this expense?')) {
+                expenses.splice(index, 1);
+                saveData();
+                renderExpenses();
+                updateSummary();
+            }
+        }
+
+        function editExpense(index) {
+            const expense = expenses[index];
+            const newCategory = prompt('Edit Category:', expense.category);
+            const newDescription = prompt('Edit Description:', expense.description);
+            const newAmount = prompt('Edit Amount:', expense.amount);
+
+            if (newCategory !== null && newDescription !== null && newAmount !== null) {
+                const amount = parseFloat(newAmount);
+                if (amount > 0) {
+                    expenses[index] = {
+                        category: newCategory.trim(),
+                        description: newDescription.trim(),
+                        amount: amount
+                    };
+                    saveData();
+                    renderExpenses();
+                    updateSummary();
+                }
+            }
+        }
+
+        function renderExpenses() {
+            const tbody = document.getElementById('expensesList');
+            tbody.innerHTML = '';
+
+            expenses.forEach((expense, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${expense.category}</strong></td>
+                    <td>${expense.description}</td>
+                    <td class="amount-text">₹${expense.amount.toLocaleString()}</td>
+                    <td>
+                        <button onclick="editExpense(${index})" class="action-btn">✏️ Edit</button>
+                        <button onclick="deleteExpense(${index})" class="action-btn delete">🗑️ Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateSummary() {
+            const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            document.getElementById('totalBudget').textContent = `₹${total.toLocaleString()}`;
+            document.getElementById('totalItems').textContent = expenses.length;
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(expenses, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'monthly_expenses_rajahmundry.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        expenses = imported;
+                        saveData();
+                        renderExpenses();
+                        updateSummary();
+                        alert('Data imported successfully!');
+                    } else {
+                        alert('Invalid file format');
+                    }
+                } catch (error) {
+                    alert('Error reading file');
+                }
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
