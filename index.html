@@ -16,6 +16,87 @@
         // Drag and Drop functionality
         let draggedElement = null;
         
+        // Sorting functionality
+        function sortExpenses() {
+            const sortValue = document.getElementById('sortSelect').value;
+            currentSort = sortValue;
+            
+            console.log('Sorting by:', sortValue); // Debug log
+            
+            if (sortValue === 'none') {
+                expenses = [...originalOrder];
+            } else if (sortValue === 'amount-high') {
+                expenses = [...expenses].sort((a, b) => b.amount - a.amount);
+            } else if (sortValue === 'amount-low') {
+                expenses = [...expenses].sort((a, b) => a.amount - b.amount);
+            }
+            
+            console.log('Expenses after sort:', expenses.slice(0, 3)); // Debug log
+            renderExpenses();
+            updateSummary();
+        }
+        
+        // Budget Management
+        function showBudgetManager() {
+            const manager = document.getElementById('budgetManager');
+            const inputsContainer = document.getElementById('budgetInputs');
+            
+            // Get unique categories
+            const categories = [...new Set(expenses.map(expense => expense.category))];
+            
+            inputsContainer.innerHTML = '';
+            
+            categories.forEach(category => {
+                const currentBudget = budgets[category] || 0;
+                const safeCategoryId = category.replace(/[^a-zA-Z0-9]/g, '');
+                const inputDiv = document.createElement('div');
+                inputDiv.className = 'budget-input-grid';
+                inputDiv.innerHTML = `
+                    <label>${category}</label>
+                    <input type="number" id="budget-${safeCategoryId}" value="${currentBudget}" placeholder="₹ Budget limit" class="form-input">
+                    <button onclick="setBudget('${category.replace(/'/g, "\\\'")}')" class="btn-small btn-blue">Set</button>
+                `;
+                inputsContainer.appendChild(inputDiv);
+            });
+            
+            manager.style.display = 'block';
+        }
+        
+        function hideBudgetManager() {
+            document.getElementById('budgetManager').style.display = 'none';
+        }
+        
+        function setBudget(category) {
+            const input = document.getElementById(`budget-${category.replace(/[^a-zA-Z0-9]/g, '')}`);
+            const amount = parseFloat(input.value);
+            
+            if (amount >= 0) {
+                budgets[category] = amount;
+                localStorage.setItem('categoryBudgets', JSON.stringify(budgets));
+                updateBudgetOverview();
+                checkBudgetAlerts();
+            }
+        }
+
+        function saveBudgets() {
+            localStorage.setItem('categoryBudgets', JSON.stringify(budgets));
+            hideBudgetManager();
+            updateBudgetOverview();
+            checkBudgetAlerts();
+            document.getElementById('dataStatus').textContent = 'Budgets Saved ✓';
+            setTimeout(() => {
+                document.getElementById('dataStatus').textContent = 'Saved Locally';
+            }, 2000);
+        }
+        
+        function resetBudgets() {
+            if (confirm('Are you sure you want to reset all budgets?')) {
+                budgets = {};
+                localStorage.removeItem('categoryBudgets');
+                updateBudgetOverview();
+            }
+        }
+        
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f9fafb;
@@ -259,6 +340,167 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .controls-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+        
+        .budget-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .budget-item {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+        
+        .budget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .budget-category {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .budget-amounts {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 4px;
+        }
+        
+        .progress-fill.safe {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+        
+        .progress-fill.warning {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+        
+        .progress-fill.danger {
+            background: linear-gradient(90deg, #ef4444, #f87171);
+        }
+        
+        .budget-status {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+        
+        .budget-status.safe { color: #10b981; }
+        .budget-status.warning { color: #f59e0b; }
+        .budget-status.danger { color: #ef4444; }
+        
+        .alert-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            max-width: 300px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .alert-popup.warning {
+            background: #fffbeb;
+            border-color: #fed7aa;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .alert-title {
+            font-weight: 600;
+            color: #991b1b;
+            margin-bottom: 0.25rem;
+        }
+        
+        .alert-popup.warning .alert-title {
+            color: #92400e;
+        }
+        
+        .alert-message {
+            font-size: 0.875rem;
+            color: #7f1d1d;
+        }
+        
+        .alert-popup.warning .alert-message {
+            color: #78350f;
+        }
+        
+        .budget-input-section {
+            background: #f0f9ff;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .budget-input-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .btn-blue {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-blue:hover {
+            background: #2563eb;
         }
         
         .btn-secondary {
@@ -353,6 +595,43 @@
             </div>
         </div>
 
+        <!-- Controls Section -->
+        <div class="controls-section">
+            <h2 class="form-title">🔧 Controls</h2>
+            <div class="controls-grid">
+                <div>
+                    <label class="form-title" style="font-size: 0.875rem; margin-bottom: 0.5rem; display: block;">Sort by Amount</label>
+                    <select id="sortSelect" onchange="sortExpenses()" class="form-input">
+                        <option value="none">Default Order</option>
+                        <option value="amount-high">Amount: High to Low</option>
+                        <option value="amount-low">Amount: Low to High</option>
+                    </select>
+                </div>
+                <button onclick="showBudgetManager()" class="btn-primary">💰 Manage Budgets</button>
+                <button onclick="resetBudgets()" class="btn-secondary btn-orange">🔄 Reset Budgets</button>
+            </div>
+        </div>
+
+        <!-- Budget Overview -->
+        <div class="budget-section" id="budgetOverview">
+            <h2 class="form-title">📊 Budget Overview</h2>
+            <div id="budgetList">
+                <!-- Budget items will be populated here -->
+            </div>
+        </div>
+
+        <!-- Budget Manager Modal -->
+        <div class="budget-input-section" id="budgetManager" style="display: none;">
+            <h3 class="form-title">Set Category Budgets</h3>
+            <div id="budgetInputs">
+                <!-- Budget inputs will be populated here -->
+            </div>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button onclick="saveBudgets()" class="btn-primary">💾 Save Budgets</button>
+                <button onclick="hideBudgetManager()" class="btn-secondary" style="margin-left: 0.5rem;">❌ Cancel</button>
+            </div>
+        </div>
+
         <!-- Add New Expense Form -->
         <div class="form-section">
             <h2 class="form-title">➕ Add New Expense</h2>
@@ -421,24 +700,232 @@
         ];
 
         let expenses = [];
+        let budgets = {};
+        let originalOrder = [];
+        let currentSort = 'none';
+
+        // Define all functions first to avoid reference errors
+        function showBudgetManager() {
+            const manager = document.getElementById('budgetManager');
+            const inputsContainer = document.getElementById('budgetInputs');
+            
+            // Get unique categories
+            const categories = [...new Set(expenses.map(expense => expense.category))];
+            
+            inputsContainer.innerHTML = '';
+            
+            categories.forEach(category => {
+                const currentBudget = budgets[category] || 0;
+                const safeCategoryId = category.replace(/[^a-zA-Z0-9]/g, '');
+                const inputDiv = document.createElement('div');
+                inputDiv.className = 'budget-input-grid';
+                inputDiv.innerHTML = `
+                    <label>${category}</label>
+                    <input type="number" id="budget-${safeCategoryId}" value="${currentBudget}" placeholder="₹ Budget limit" class="form-input">
+                    <button onclick="setBudget('${category.replace(/'/g, "\\\'")}')" class="btn-small btn-blue">Set</button>
+                `;
+                inputsContainer.appendChild(inputDiv);
+            });
+            
+            manager.style.display = 'block';
+        }
+        
+        function hideBudgetManager() {
+            document.getElementById('budgetManager').style.display = 'none';
+        }
+        
+        function setBudget(category) {
+            const input = document.getElementById(`budget-${category.replace(/[^a-zA-Z0-9]/g, '')}`);
+            const amount = parseFloat(input.value);
+            
+            if (amount >= 0) {
+                budgets[category] = amount;
+                localStorage.setItem('categoryBudgets', JSON.stringify(budgets));
+                updateBudgetOverview();
+                checkBudgetAlerts();
+            }
+        }
+
+        function saveBudgets() {
+            localStorage.setItem('categoryBudgets', JSON.stringify(budgets));
+            hideBudgetManager();
+            updateBudgetOverview();
+            checkBudgetAlerts();
+            document.getElementById('dataStatus').textContent = 'Budgets Saved ✓';
+            setTimeout(() => {
+                document.getElementById('dataStatus').textContent = 'Saved Locally';
+            }, 2000);
+        }
+
+        function resetBudgets() {
+            if (confirm('Are you sure you want to reset all budgets?')) {
+                budgets = {};
+                localStorage.removeItem('categoryBudgets');
+                updateBudgetOverview();
+            }
+        }
+
+        function sortExpenses() {
+            const sortValue = document.getElementById('sortSelect').value;
+            currentSort = sortValue;
+            
+            if (sortValue === 'none') {
+                expenses = [...originalOrder];
+            } else if (sortValue === 'amount-high') {
+                expenses.sort((a, b) => b.amount - a.amount);
+            } else if (sortValue === 'amount-low') {
+                expenses.sort((a, b) => a.amount - b.amount);
+            }
+            
+            renderExpenses();
+        }
+
+        function updateBudgetOverview() {
+            const budgetList = document.getElementById('budgetList');
+            
+            // Get spending by category
+            const categorySpending = {};
+            expenses.forEach(expense => {
+                if (categorySpending[expense.category]) {
+                    categorySpending[expense.category] += expense.amount;
+                } else {
+                    categorySpending[expense.category] = expense.amount;
+                }
+            });
+            
+            budgetList.innerHTML = '';
+            
+            // Show budgets for categories that have spending or set budgets
+            const allCategories = new Set([...Object.keys(categorySpending), ...Object.keys(budgets)]);
+            
+            allCategories.forEach(category => {
+                const spent = categorySpending[category] || 0;
+                const budget = budgets[category] || 0;
+                
+                if (budget > 0) {
+                    const percentage = Math.min((spent / budget) * 100, 100);
+                    const remaining = Math.max(budget - spent, 0);
+                    
+                    let statusClass = 'safe';
+                    let statusText = `₹${remaining.toLocaleString()} remaining`;
+                    
+                    if (percentage >= 100) {
+                        statusClass = 'danger';
+                        statusText = `Over budget by ₹${(spent - budget).toLocaleString()}`;
+                    } else if (percentage >= 80) {
+                        statusClass = 'warning';
+                        statusText = `₹${remaining.toLocaleString()} remaining`;
+                    }
+                    
+                    const budgetItem = document.createElement('div');
+                    budgetItem.className = 'budget-item';
+                    budgetItem.innerHTML = `
+                        <div class="budget-header">
+                            <span class="budget-category">${category}</span>
+                            <span class="budget-amounts">₹${spent.toLocaleString()} / ₹${budget.toLocaleString()}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${statusClass}" style="width: ${percentage}%"></div>
+                        </div>
+                        <div class="budget-status ${statusClass}">${statusText}</div>
+                    `;
+                    budgetList.appendChild(budgetItem);
+                }
+            });
+            
+            if (budgetList.children.length === 0) {
+                budgetList.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No budgets set. Click "Manage Budgets" to add category limits.</p>';
+            }
+        }
+
+        function checkBudgetAlerts() {
+            // Get spending by category
+            const categorySpending = {};
+            expenses.forEach(expense => {
+                if (categorySpending[expense.category]) {
+                    categorySpending[expense.category] += expense.amount;
+                } else {
+                    categorySpending[expense.category] = expense.amount;
+                }
+            });
+            
+            // Check for alerts
+            Object.keys(budgets).forEach(category => {
+                const spent = categorySpending[category] || 0;
+                const budget = budgets[category];
+                if (budget > 0) {
+                    const percentage = (spent / budget) * 100;
+                    
+                    if (percentage >= 100) {
+                        showAlert('danger', 'Budget Exceeded!', `${category}: ₹${(spent - budget).toLocaleString()} over budget`);
+                    } else if (percentage >= 80) {
+                        showAlert('warning', 'Budget Warning!', `${category}: ${(100 - percentage).toFixed(0)}% budget remaining`);
+                    }
+                }
+            });
+        }
+
+        function showAlert(type, title, message) {
+            // Remove existing alerts
+            const existingAlerts = document.querySelectorAll('.alert-popup');
+            existingAlerts.forEach(alert => alert.remove());
+            
+            const alert = document.createElement('div');
+            alert.className = `alert-popup ${type}`;
+            alert.innerHTML = `
+                <div class="alert-title">${title}</div>
+                <div class="alert-message">${message}</div>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
 
         // Load data on page load
         window.addEventListener('DOMContentLoaded', function() {
             loadData();
+            loadBudgets();
             renderExpenses();
             updateSummary();
+            updateBudgetOverview();
         });
 
         function loadData() {
             const saved = localStorage.getItem('monthlyExpenses');
             if (saved) {
                 expenses = JSON.parse(saved);
+                originalOrder = [...expenses];
                 document.getElementById('dataStatus').textContent = 'Loaded from Storage';
             } else {
                 expenses = [...defaultExpenses];
+                originalOrder = [...expenses];
                 saveData();
                 document.getElementById('dataStatus').textContent = 'Default Data Loaded';
             }
+        }
+
+        function loadBudgets() {
+            const saved = localStorage.getItem('categoryBudgets');
+            if (saved) {
+                budgets = JSON.parse(saved);
+            }
+        }
+
+        function saveBudgets() {
+            localStorage.setItem('categoryBudgets', JSON.stringify(budgets));
+            hideBudgetManager();
+            updateBudgetOverview();
+            checkBudgetAlerts();
+            document.getElementById('dataStatus').textContent = 'Budgets Saved ✓';
+            setTimeout(() => {
+                document.getElementById('dataStatus').textContent = 'Saved Locally';
+            }, 2000);
         }
 
         function saveData() {
@@ -460,9 +947,17 @@
             }
 
             expenses.push({ category, description, amount });
+            originalOrder = [...expenses];
+            
+            // Reset sort to default when adding new expense
+            document.getElementById('sortSelect').value = 'none';
+            currentSort = 'none';
+            
             saveData();
             renderExpenses();
             updateSummary();
+            updateBudgetOverview();
+            checkBudgetAlerts();
 
             // Clear form
             document.getElementById('newCategory').value = '';
@@ -473,9 +968,11 @@
         function deleteExpense(index) {
             if (confirm('Are you sure you want to delete this expense?')) {
                 expenses.splice(index, 1);
+                originalOrder = [...expenses];
                 saveData();
                 renderExpenses();
                 updateSummary();
+                updateBudgetOverview();
             }
         }
 
@@ -493,9 +990,11 @@
                         description: newDescription.trim(),
                         amount: amount
                     };
+                    originalOrder = [...expenses];
                     saveData();
                     renderExpenses();
                     updateSummary();
+                    updateBudgetOverview();
                 }
             }
         }
@@ -570,9 +1069,11 @@
                         expenses.splice(targetIndex, 0, draggedExpense);
                         
                         // Save and re-render
+                        originalOrder = [...expenses];
                         saveData();
                         renderExpenses();
                         updateSummary();
+                        updateBudgetOverview();
                     }
 
                     this.classList.remove('drag-over');
